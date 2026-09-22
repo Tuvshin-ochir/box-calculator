@@ -10,14 +10,12 @@ type BoxFormProps = {
   items: BoxItem[];
   editingId: string | null;
   isSaving: boolean;
-  isValid: boolean;
   onNameChange: (value: string) => void;
   onPriceChange: (value: string) => void;
   onItemChange: (index: number, field: keyof BoxItem, value: string) => void;
   onAddItem: () => void;
   onReplaceItems: (items: BoxItem[]) => void;
   onRemoveItem: (index: number) => void;
-  onPublish: () => void;
   onShare: () => void;
 };
 
@@ -37,14 +35,12 @@ export default function BoxForm({
   items,
   editingId,
   isSaving,
-  isValid,
   onNameChange,
   onPriceChange,
   onItemChange,
   onAddItem,
   onReplaceItems,
   onRemoveItem,
-  onPublish,
   onShare,
 }: BoxFormProps) {
   const [csvItems, setCsvItems] = useState<BoxItem[] | null>(null);
@@ -280,18 +276,7 @@ export default function BoxForm({
               ? "Өөрчлөлт хадгалах"
               : "Draft хадгалах"}
         </Button>
-        {editingId && (
-          <Button
-            className="primary-button"
-            size="lg"
-            type="button"
-            variant={isValid ? "default" : "secondary"}
-            disabled={isSaving || !isValid}
-            onClick={onPublish}
-          >
-            {isSaving ? "Боловсруулж байна..." : "LIVE болгох"}
-          </Button>
-        )}
+
       </div>
     </section>
   );

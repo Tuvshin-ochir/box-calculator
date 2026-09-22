@@ -20,7 +20,6 @@ export type Metrics = {
 export type SavedBox = {
   _id: string;
   name: string;
-  status?: "DRAFT" | "LIVE";
   priceMnt: number;
   items: { name: string; valueMnt: number; probabilityPpm: number }[];
   calculations?: Metrics;
@@ -28,7 +27,6 @@ export type SavedBox = {
 
 export type BoxVersion = {
   versionNumber: number;
-  status?: "DRAFT" | "LIVE";
   priceMnt: number;
   items: { name: string; valueMnt: number; probabilityPpm: number }[];
   calculations?: Metrics;

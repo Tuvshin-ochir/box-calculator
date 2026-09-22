@@ -56,14 +56,12 @@ export default function BoxCreator() {
       <form className="editor-grid" onSubmit={editor.saveDraft}>
         <BoxForm
           {...editor}
-          isValid={editor.isValid}
           onNameChange={editor.setName}
           onPriceChange={editor.setPrice}
           onItemChange={editor.updateItem}
           onAddItem={editor.addItem}
           onReplaceItems={editor.replaceItems}
           onRemoveItem={editor.removeItem}
-          onPublish={editor.publishBox}
           onShare={editor.shareBox}
         />
         <BoxReview

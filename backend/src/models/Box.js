@@ -41,18 +41,13 @@ const boxSchema = new mongoose.Schema(
   {
     name: { type: String, default: "Untitled Box", trim: true },
     priceMnt: { type: Number, required: true, min: 0 },
-    status: {
-      type: String,
-      enum: ["DRAFT", "LIVE"],
-      default: "DRAFT",
-    },
     currentVersion: { type: Number, default: 1 },
     maxRtpBps: { type: Number, required: true, min: 0 },
     items: { type: [itemSchema], default: [] },
     calculations: calculationsSchema,
     versions: { type: [versionSchema], default: [] },
   },
-  { timestamps: true },
+  { timestamps: true, optimisticConcurrency: true },
 );
 
 export default mongoose.model("Box", boxSchema);

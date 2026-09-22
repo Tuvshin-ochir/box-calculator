@@ -3,7 +3,6 @@ import {
   deleteBox,
   getAllBoxes,
   getBoxById,
-  publishBox,
   getVersions,
   simulateBox,
   updateBox,
@@ -70,12 +69,5 @@ export async function simulateBoxOpenings(req, res) {
   res.json({
     success: true,
     data: await simulateBox(req.params.id),
-  });
-}
-
-export async function publishBoxHandler(req, res) {
-  res.json({
-    success: true,
-    data: await publishBox(req.params.id),
   });
 }

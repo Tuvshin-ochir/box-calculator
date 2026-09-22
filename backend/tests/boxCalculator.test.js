@@ -20,7 +20,6 @@ import {
   validateItems,
   validateBox,
 } from "../src/services/boxCalculator.js";
-import { publishBox } from "../src/services/boxService.js";
 
 const canonicalItems = [
   { name: "Item A", valueMnt: 5_000, probabilityPpm: 500_000 },
@@ -240,26 +239,4 @@ describe("canonical box calculations", () => {
     expect(result.averageProfitLossMnt).toBe(100);
   });
 
-  it("publishes a valid box and marks it live", async () => {
-    const box = {
-      _id: "box-live-test",
-      name: "Live Test",
-      priceMnt: 10_000,
-      items: [
-        { name: "A", valueMnt: 5_000, probabilityPpm: 500_000 },
-        { name: "B", valueMnt: 15_000, probabilityPpm: 500_000 },
-      ],
-      status: "DRAFT",
-      maxRtpBps: 10_000,
-      calculations: { totalPpm: 1_000_000 },
-      save: async function () {
-        return this;
-      },
-    };
-
-    const result = await publishBox(box);
-
-    expect(result.status).toBe("LIVE");
-    expect(result.calculations.totalPpm).toBe(1_000_000);
-  });
 });

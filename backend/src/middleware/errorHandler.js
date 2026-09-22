@@ -7,6 +7,14 @@ export function notFoundHandler(req, res) {
 }
 
 export function errorHandler(error, _req, res, _next) {
+  if (error.name === "VersionError") {
+    return res.status(409).json({
+      success: false,
+      code: "BOX_UPDATE_CONFLICT",
+      message: "Box changed during this request. Reload it and try again.",
+      details: {},
+    });
+  }
   const isCastError = error.name === "CastError";
   const statusCode = isCastError ? 400 : error.statusCode || 500;
   const code = isCastError ? "INVALID_ID" : error.code || "INTERNAL_ERROR";

@@ -5,7 +5,6 @@ import {
   getBox,
   listBoxVersions,
   listBoxes,
-  publishBoxHandler,
   removeBox,
   simulateBoxOpenings,
   updateBoxDraft,
@@ -31,6 +30,5 @@ router
   .post(asyncHandler(createBoxVersion));
 
 router.post("/:id/simulate", asyncHandler(simulateBoxOpenings));
-router.post("/:id/publish", asyncHandler(publishBoxHandler));
 
 export default router;
