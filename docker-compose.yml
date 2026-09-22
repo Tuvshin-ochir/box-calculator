@@ -1,0 +1,40 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: box-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: box_management_dev
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+    container_name: box-backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "4001:4000"
+    environment:
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:27017/box_management_dev
+      CORS_ORIGIN: http://localhost:3001
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4001
+    container_name: box-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3001:3000"
+
+volumes:
+  mongo_data:
