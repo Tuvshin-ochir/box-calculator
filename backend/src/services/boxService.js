@@ -8,10 +8,18 @@ import {
 } from "./boxCalculator.js";
 import { AppError, notFoundError } from "../utils/errors.js";
 
-function getMaxRtpBps(value) {
-  if (value !== undefined) return value;
-  const configured = Number(process.env.MAX_RTP_BPS);
-  return Number.isSafeInteger(configured) ? configured : DEFAULT_MAX_RTP_BPS;
+function getMaxRtpBps() {
+  const raw = process.env.MAX_RTP_BPS;
+  if (raw === undefined) return DEFAULT_MAX_RTP_BPS;
+  const configured = raw.trim() === "" ? NaN : Number(raw);
+  if (!Number.isSafeInteger(configured) || configured < 0) {
+    throw new AppError(
+      "INVALID_RTP_THRESHOLD",
+      "MAX_RTP_BPS must be a non-negative integer BPS.",
+      500,
+    );
+  }
+  return configured;
 }
 
 function boxInput(payload = {}, existing = {}) {
@@ -19,8 +27,7 @@ function boxInput(payload = {}, existing = {}) {
     name: payload.name ?? existing.name ?? "Untitled Box",
     priceMnt: payload.priceMnt ?? payload.price ?? existing.priceMnt,
     items: payload.items ?? existing.items ?? [],
-    status: payload.status ?? existing.status ?? "DRAFT",
-    maxRtpBps: getMaxRtpBps(payload.maxRtpBps ?? existing.maxRtpBps),
+    maxRtpBps: getMaxRtpBps(),
   };
 }
 
@@ -48,13 +55,7 @@ function applyInput(box, input) {
 }
 
 export function validateBoxInput(payload = {}) {
-  const maxRtpBps = Number(process.env.MAX_RTP_BPS);
-  return validateBox({
-    ...payload,
-    maxRtpBps: Number.isSafeInteger(maxRtpBps)
-      ? maxRtpBps
-      : DEFAULT_MAX_RTP_BPS,
-  });
+  return validateBox({ ...payload, maxRtpBps: getMaxRtpBps() });
 }
 
 export async function createBox(payload) {
@@ -65,7 +66,6 @@ export async function createBox(payload) {
   const calculations = calculateBoxMetrics(input);
   return Box.create({
     ...input,
-    status: "DRAFT",
     currentVersion: 1,
     calculations,
     versions: [
@@ -115,39 +115,4 @@ export async function simulateBox(id) {
   const box = await Box.findById(id);
   if (!box) throw notFoundError("box");
   return runMonteCarlo({ priceMnt: box.priceMnt, items: box.items });
-}
-
-export async function publishBox(boxOrId, payload) {
-  const box =
-    typeof boxOrId === "string" ? await Box.findById(boxOrId) : boxOrId;
-
-  if (!box) throw notFoundError("box");
-
-  const input = boxInput(payload ?? box, box);
-  const validation = validateBox({
-    ...input,
-    maxRtpBps: getMaxRtpBps(input.maxRtpBps ?? box.maxRtpBps),
-  });
-
-  if (!validation.isValid) {
-    throw new AppError(
-      "INVALID_BOX",
-      "Box validation failed before publishing.",
-      400,
-      validation,
-    );
-  }
-
-  box.name = input.name;
-  box.priceMnt = input.priceMnt;
-  box.items = input.items;
-  box.maxRtpBps = input.maxRtpBps;
-  box.calculations = validation.calculations;
-  box.status = "LIVE";
-
-  if (typeof box.save === "function") {
-    await box.save();
-  }
-
-  return box;
 }

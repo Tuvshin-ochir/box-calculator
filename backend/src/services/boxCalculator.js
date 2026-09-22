@@ -240,7 +240,11 @@ export function validateBox({
         "Configured max RTP must be a non-negative integer BPS.",
       ),
     );
-  else if (calculations.rtpBps > maxRtpBps)
+  else if (
+    isInteger(resolvedPriceMnt) && resolvedPriceMnt > 0 &&
+    BigInt(calculations.weightedValueNumerator) * BPS_BIGINT >
+      BigInt(maxRtpBps) * PPM_BIGINT * BigInt(resolvedPriceMnt)
+  )
     errors.push(
       issue("RTP_THRESHOLD_EXCEEDED", `RTP must not exceed ${maxRtpBps} BPS.`, {
         rtpBps: calculations.rtpBps,

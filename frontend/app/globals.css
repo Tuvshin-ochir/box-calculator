@@ -436,8 +436,7 @@
 }
 .metric-list div:first-child {
   background: #edf7f2;
-  margin: 0 -12px;
-  padding: 17px 12px;
+  margin: 0;
 }
 .metric-list div:first-child strong {
   color: var(--green);

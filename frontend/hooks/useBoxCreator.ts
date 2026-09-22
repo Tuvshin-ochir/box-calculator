@@ -264,35 +264,6 @@ export function useBoxCreator() {
     await persistDraft();
   }
 
-  async function publishBox() {
-    if (!editingId || !isValid) return;
-    setIsSaving(true);
-    try {
-      const result = await apiRequest<{
-        _id?: string;
-        name?: string;
-        status?: "DRAFT" | "LIVE";
-      }>(`/api/boxes/${editingId}/publish`, {
-        method: "POST",
-      });
-
-      setMessage(`${result.name || name || "Untitled Box"} box LIVE боллоо.`);
-      await loadBoxes();
-      return result;
-    } catch (error) {
-      const apiError = error as ApiError;
-      setErrors(
-        issueMessages(
-          apiError.errors,
-          apiError.message || "Box LIVE болгох боломжгүй байна.",
-        ),
-      );
-      return null;
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   async function deleteBox(boxId: string) {
     if (!boxId) return;
     if (!window.confirm("Энэ box-ийг устгах уу?")) return;
@@ -403,7 +374,6 @@ export function useBoxCreator() {
     startNewBox,
     editBox,
     saveDraft,
-    publishBox,
     deleteBox,
     runSimulation,
     shareBox,
