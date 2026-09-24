@@ -97,6 +97,7 @@ function SimulationHistogram({ simulation }: { simulation: Simulation }) {
         Зүүн талын дүн нь нэг box нээхэд платформд үлдэх ашиг (+) эсвэл гарах
         алдагдал (-). Барын урт нь тэр үр дүн хэдэн удаа давтагдсаныг харуулна.
       </p>
+      <p>Нийт орлого: {simulation.totalRevenueMnt.toLocaleString()} ₮ · Нийт олголт: {simulation.totalPayoutMnt.toLocaleString()} ₮</p>
       <small className="simulation-range">
         Хамгийн их алдагдал: {simulation.minimumProfitLossMnt.toLocaleString()}{" "}
         ₮<span> · </span>
@@ -204,7 +205,7 @@ export default function BoxReview({
         <SimulationHistogram simulation={simulation} />
       ) : (
         <p className="simulation-empty">
-          Draft хадгалсны дараа энд 1,000 нээлтийн жишээ гарна. Энэ нь бодит
+          Оруулсан үнэ, item болон PPM-ээр 1,000 нээлтийн жишээ тооцно. Энэ нь бодит
           хэрэглэгчийн үр дүн биш, box-ийн эрсдэлийг урьдчилан харах тооцоо юм.
         </p>
       )}

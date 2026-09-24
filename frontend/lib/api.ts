@@ -23,6 +23,8 @@ export async function apiRequest<T>(
     });
   }
 
+  if (response.status === 204 && response.ok) return undefined as T;
+
   let result: Record<string, unknown>;
   try {
     result = await response.json();
@@ -34,7 +36,7 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const error = new Error(String(result.message || "Request failed"));
-    Object.assign(error, result);
+    Object.assign(error, result, result.details);
     throw error;
   }
 
@@ -52,7 +54,7 @@ export function toBoxPayload(
     items: items.map((item) => ({
       name: item.name,
       valueMnt: Number(item.value),
-      probabilityPpm: Number(item.probabilityPpm),
+      probabilityPpm: item.probabilityPpm.trim() === "" ? NaN : Number(item.probabilityPpm),
     })),
   };
 }

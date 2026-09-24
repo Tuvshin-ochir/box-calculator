@@ -170,32 +170,48 @@
 }
 .version-list {
   display: grid;
-  gap: 5px;
-  margin: 5px 0 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  margin: 10px 0 16px;
+  padding: 0 0 0 12px;
   border-left: 2px solid var(--green);
-  background: #f0eee5;
 }
 .version-row {
   display: grid;
-  grid-template-columns: 42px 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #faf9f4;
   color: #555b55;
-  font-size: 11px;
+  font-size: 12px;
 }
-.version-row strong {
+.version-info { min-width: 0; }
+.version-heading, .version-metrics, .version-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.version-badge {
+  border-radius: 4px;
+  padding: 4px 8px;
+  background: #e9f4ef;
   color: var(--green);
-  font:
-    500 11px "DM Mono",
-    monospace;
+  font: 600 12px "DM Mono", monospace;
 }
-.version-row small {
-  color: #686b65;
-  font:
-    10px "DM Mono",
-    monospace;
+.version-metrics { margin-top: 10px; }
+.version-metrics span { white-space: nowrap; }
+.version-metrics b { color: var(--ink); font-weight: 600; }
+.version-date {
+  display: block;
+  margin-top: 8px;
+  color: #7e8179;
+  font: 11px "DM Mono", monospace;
 }
+.version-actions { flex-wrap: nowrap; gap: 8px; }
+.version-actions button { flex: 0 0 auto; }
 .saved-box strong,
 .saved-box small {
   display: block;
@@ -1025,10 +1041,11 @@ input:focus {
     align-self: flex-end;
   }
   .version-row {
-    grid-template-columns: 36px 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
   }
-  .version-row small {
-    grid-column: 2;
+  .version-actions {
+    justify-content: flex-start;
   }
   .panel {
     padding: 20px 16px;

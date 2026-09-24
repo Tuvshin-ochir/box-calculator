@@ -71,3 +71,45 @@ jobs:
 
       - name: Build backend and frontend images
         run: docker compose build backend frontend
+
+  registry-push:
+    name: Publish ${{ matrix.service }} image
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, frontend]
+    env:
+      SERVICE: ${{ matrix.service }}
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:4001' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}-${SERVICE}:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: |
+          docker build \
+            --build-arg "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "$IMAGE" "./$SERVICE"
+
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Push image
+        run: docker push "$IMAGE"
+
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io

@@ -231,12 +231,12 @@ describe("canonical box calculations", () => {
     const result = runMonteCarlo({
       priceMnt: 100,
       openingCount: 3,
-      items: [{ name: "Prize", valueMnt: 0, probabilityPpm: PPM_TOTAL }],
+      items: [{ name: "Prize", valueMnt: 1, probabilityPpm: PPM_TOTAL }],
       random: () => 0,
     });
 
-    expect(result.totalProfitLossMnt).toBe(300);
-    expect(result.averageProfitLossMnt).toBe(100);
+    expect(result.totalProfitLossMnt).toBe(297);
+    expect(result.averageProfitLossMnt).toBe(99);
   });
 
 });

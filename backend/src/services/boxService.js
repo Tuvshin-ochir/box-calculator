@@ -82,8 +82,14 @@ export async function createBox(payload) {
 export async function getAllBoxes() {
   return Box.find({}).sort({ createdAt: -1 });
 }
-export async function getBoxById(id) {
-  return Box.findById(id);
+export async function getBoxById(id, version) {
+  const box = await Box.findById(id);
+  if (!box || version === undefined) return box;
+  if (!/^[1-9]\d*$/.test(String(version)) || !Number.isSafeInteger(Number(version)))
+    throw new AppError("INVALID_VERSION", "Version must be a positive integer.", 400);
+  const saved = box.versions.find((entry) => entry.versionNumber === Number(version));
+  if (!saved) throw notFoundError("version");
+  return { ...box.toObject(), ...saved.toObject(), _id: box._id, currentVersion: saved.versionNumber };
 }
 
 export async function updateBox(id, payload) {
@@ -114,5 +120,13 @@ export async function getVersions(id) {
 export async function simulateBox(id) {
   const box = await Box.findById(id);
   if (!box) throw notFoundError("box");
-  return runMonteCarlo({ priceMnt: box.priceMnt, items: box.items });
+  return simulateBoxInput(box);
+}
+
+export function simulateBoxInput(payload = {}) {
+  // RTP is a warning for risk analysis, not a restriction on simulations.
+  const validation = validateBoxInput(payload);
+  const errors = validation.errors.filter((issue) => issue.code !== "RTP_THRESHOLD_EXCEEDED");
+  if (errors.length) throw new AppError("INVALID_SIMULATION", "Simulation data is invalid.", 400, { ...validation, errors });
+  return runMonteCarlo({ priceMnt: payload.priceMnt, items: payload.items });
 }
