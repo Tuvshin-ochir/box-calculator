@@ -28,7 +28,13 @@ function readSharedBox(): SharedBoxDraft | null {
   const encoded = new URLSearchParams(window.location.search).get("box");
   if (!encoded) return null;
   try {
-    return JSON.parse(decodeURIComponent(encoded)) as SharedBoxDraft;
+    let parsed;
+    try { parsed = JSON.parse(encoded); }
+    catch { parsed = JSON.parse(decodeURIComponent(encoded)); }
+    if (typeof parsed?.name !== "string" || typeof parsed?.price !== "string" ||
+      !Array.isArray(parsed.items) || !parsed.items.every((item: BoxItem) =>
+        item && typeof item.name === "string" && typeof item.value === "string" && typeof item.probabilityPpm === "string")) return null;
+    return parsed as SharedBoxDraft;
   } catch {
     return null;
   }
@@ -50,12 +56,11 @@ function validationConnectionMessage(error: ApiError) {
 }
 
 export function useBoxCreator() {
-  const sharedBox = readSharedBox();
-  const [name, setName] = useState(sharedBox?.name ?? "");
+  const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [price, setPrice] = useState(sharedBox?.price ?? "");
+  const [price, setPrice] = useState("");
   const [items, setItems] = useState<BoxItem[]>(
-    sharedBox?.items?.length ? sharedBox.items : [emptyItem()],
+    [emptyItem()],
   );
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -63,7 +68,9 @@ export function useBoxCreator() {
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [savedBoxes, setSavedBoxes] = useState<SavedBox[]>([]);
-  const [simulation, setSimulation] = useState<Simulation | null>(null);
+  const [simulationResult, setSimulationResult] = useState<{ input: string; data: Simulation } | null>(null);
+  const currentInput = JSON.stringify(toBoxPayload(name, price, items));
+  const simulation = simulationResult?.input === currentInput ? simulationResult.data : null;
   const [isSimulating, setIsSimulating] = useState(false);
   const [versions, setVersions] = useState<BoxVersion[]>([]);
   const [versionsBoxId, setVersionsBoxId] = useState<string | null>(null);
@@ -85,6 +92,27 @@ export function useBoxCreator() {
 
   useEffect(() => {
     void loadBoxes();
+    async function loadShared() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      try {
+        if (id) {
+          const version = params.get("version");
+          const box = await apiRequest<SavedBox>(`/api/boxes/${encodeURIComponent(id)}${version ? `?version=${encodeURIComponent(version)}` : ""}`);
+          setEditingId(box._id);
+          setName(box.name || "");
+          setPrice(String(box.priceMnt));
+          setItems(box.items.map((item) => ({ name: item.name, value: String(item.valueMnt), probabilityPpm: String(item.probabilityPpm) })));
+          const history = await apiRequest<BoxVersion[]>(`/api/boxes/${encodeURIComponent(id)}/versions`);
+          setVersions(history);
+          setVersionsBoxId(id);
+        } else {
+          const shared = readSharedBox();
+          if (shared) { setName(shared.name || ""); setPrice(shared.price || ""); setItems(shared.items || [emptyItem()]); }
+        }
+      } catch { setErrors(["Хуваалцсан box эсвэл хувилбарыг олсонгүй."]); }
+    }
+    void loadShared();
   }, []);
 
   useEffect(() => {
@@ -163,7 +191,7 @@ export function useBoxCreator() {
     setErrors([]);
     setWarnings([]);
     setMessage("");
-    setSimulation(null);
+    setSimulationResult(null);
   }
 
   function editBox(box: SavedBox) {
@@ -178,7 +206,7 @@ export function useBoxCreator() {
       })),
     );
     setMessage(`${box.name || "Untitled Box"} box-ийг засаж байна.`);
-    setSimulation(null);
+    setSimulationResult(null);
     void viewVersions(box._id);
   }
 
@@ -229,6 +257,7 @@ export function useBoxCreator() {
       const result = await apiRequest<{
         _id?: string;
         name?: string;
+        currentVersion?: number;
         box?: { _id?: string; name?: string };
       }>(path, {
         method: editingId ? "PUT" : "POST",
@@ -244,7 +273,7 @@ export function useBoxCreator() {
         result.name || result.box?.name || name || "Untitled Box";
       setMessage(`${savedName} draft өөрчлөлт амжилттай хадгалагдлаа.`);
       await loadBoxes();
-      return savedName;
+      return { name: savedName, id: savedId, version: result.currentVersion };
     } catch (error) {
       const apiError = error as ApiError;
       setErrors(
@@ -268,34 +297,15 @@ export function useBoxCreator() {
     if (!boxId) return;
     if (!window.confirm("Энэ box-ийг устгах уу?")) return;
 
-    const previousSavedBoxes = savedBoxes;
-    const previousVersions = versions;
-    const previousVersionsBoxId = versionsBoxId;
-    const previousEditingId = editingId;
-
-    setSavedBoxes((current) => current.filter((box) => box._id !== boxId));
-    setVersions((current) => (versionsBoxId === boxId ? [] : current));
-    setVersionsBoxId((current) => (current === boxId ? null : current));
-
-    if (editingId === boxId) {
-      startNewBox();
-    }
-
-    setMessage("Box устгагдлаа.");
-
     try {
       await apiRequest(`/api/boxes/${boxId}`, {
         method: "DELETE",
       });
+      if (editingId === boxId) startNewBox();
+      if (versionsBoxId === boxId) { setVersions([]); setVersionsBoxId(null); }
+      setMessage("Box устгагдлаа.");
       await loadBoxes();
     } catch (error) {
-      setSavedBoxes(previousSavedBoxes);
-      setVersions(previousVersions);
-      setVersionsBoxId(previousVersionsBoxId);
-      if (previousEditingId === boxId) {
-        setEditingId(previousEditingId);
-      }
-
       const apiError = error as ApiError;
       setErrors(
         issueMessages(
@@ -307,14 +317,12 @@ export function useBoxCreator() {
   }
 
   async function runSimulation() {
-    if (!editingId) return;
     setIsSimulating(true);
     try {
-      setSimulation(
-        await apiRequest<Simulation>(`/api/boxes/${editingId}/simulate`, {
-          method: "POST",
-        }),
-      );
+      const data = await apiRequest<Simulation>("/api/boxes/simulate", {
+        method: "POST", body: currentInput,
+      });
+      setSimulationResult({ input: currentInput, data });
     } catch (error) {
       const apiError = error as ApiError;
       setErrors(
@@ -329,25 +337,24 @@ export function useBoxCreator() {
   }
 
   async function shareBox() {
-    const persistedName = await persistDraft();
-    const params = new URLSearchParams({
-      box: encodeURIComponent(JSON.stringify({ name, price, items })),
-    });
-    const shareUrl = `${window.location.origin}${window.location.pathname}?${params}`;
+    const saved = await persistDraft();
+    if (!saved?.id) return;
+    await copyShareUrl(saved.id, saved.version);
+  }
+
+  async function copyShareUrl(id: string, version?: number) {
+    const params = new URLSearchParams({ id });
+    if (version) params.set("version", String(version));
+    const url = `${window.location.origin}/?${params}`;
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setMessage(
-        persistedName
-          ? `${persistedName} draft өөрчлөлт амжилттай хадгалагдлаа. URL clipboard-д хууллаа.`
-          : "URL clipboard-д хууллаа.",
-      );
-    } catch {
-      setMessage(
-        persistedName
-          ? `${persistedName} draft өөрчлөлт амжилттай хадгалагдлаа. ${shareUrl}`
-          : shareUrl,
-      );
-    }
+      await navigator.clipboard.writeText(url);
+      setMessage("Хувилбарын URL clipboard-д хууллаа.");
+    } catch { setMessage(url); }
+  }
+
+  function selectVersion(box: SavedBox, version: BoxVersion) {
+    editBox({ ...box, ...version });
+    setMessage(`v${version.versionNumber} хувилбарыг нээлээ. Хадгалбал шинэ хувилбар үүснэ.`);
   }
 
   return {
@@ -377,6 +384,8 @@ export function useBoxCreator() {
     deleteBox,
     runSimulation,
     shareBox,
+    copyShareUrl,
+    selectVersion,
     versions,
     versionsBoxId,
     isLoadingVersions,

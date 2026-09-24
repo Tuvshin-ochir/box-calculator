@@ -6,6 +6,8 @@ type SavedBoxesProps = {
   boxes: SavedBox[];
   onSelect: (box: SavedBox) => void;
   onDelete: (boxId: string) => void;
+  onSelectVersion: (box: SavedBox, version: BoxVersion) => void;
+  onShareVersion: (id: string, version: number) => void;
   versions: BoxVersion[];
   versionsBoxId: string | null;
   sectionRef?: RefObject<HTMLElement | null>;
@@ -15,6 +17,8 @@ export default function SavedBoxes({
   boxes,
   onSelect,
   onDelete,
+  onSelectVersion,
+  onShareVersion,
   versions,
   versionsBoxId,
   sectionRef,
@@ -66,17 +70,28 @@ export default function SavedBoxes({
                 <div className="version-list">
                   {versions.map((version) => (
                     <div className="version-row" key={version.versionNumber}>
-                      <strong>v{version.versionNumber}</strong>
-                      <span>
-                        {version.priceMnt.toLocaleString()} ₮ ·{" "}
-                        {version.items.length} item
-                      </span>
-                      <small>
-                        EV{" "}
-                        {version.calculations?.expectedValueMnt?.toLocaleString() ??
-                          "--"}{" "}
-                        ₮ · RTP {version.calculations?.rtpPercent ?? "--"}%
-                      </small>
+                      <div className="version-info">
+                        <div className="version-heading">
+                          <strong className="version-badge">v{version.versionNumber}</strong>
+                          <span>{version.priceMnt.toLocaleString()} ₮ · {version.items.length} item</span>
+                        </div>
+                        <div className="version-metrics">
+                          <span>EV <b>{version.calculations?.expectedValueMnt?.toLocaleString() ?? "--"} ₮</b></span>
+                          <span>RTP <b>{version.calculations?.rtpPercent ?? "--"}%</b></span>
+                        </div>
+                        {version.createdAt && (
+                          <time className="version-date" dateTime={version.createdAt}>
+                            {new Date(version.createdAt).toLocaleString("mn-MN", {
+                              year: "numeric", month: "2-digit", day: "2-digit",
+                              hour: "2-digit", minute: "2-digit", hour12: false,
+                            })}
+                          </time>
+                        )}
+                      </div>
+                      <div className="version-actions">
+                        <Button size="sm" variant="outline" onClick={() => onSelectVersion(box, version)} aria-label={`v${version.versionNumber} нээх`}>Нээх</Button>
+                        <Button size="sm" variant="secondary" onClick={() => onShareVersion(box._id, version.versionNumber)} aria-label={`v${version.versionNumber} URL хуулах`}>URL хуулах</Button>
+                      </div>
                     </div>
                   ))}
                 </div>

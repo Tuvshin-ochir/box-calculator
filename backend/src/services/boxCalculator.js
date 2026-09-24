@@ -30,7 +30,9 @@ export function normalizeItems(items) {
 // Хуваагаад тоймлох.
 export function divideAndRoundHalfUp(numerator, denominator) {
   if (denominator <= 0n) throw new Error("Хуваарь нь тэгээс их байх ёстой.");
-  return (numerator + denominator / 2n) / denominator;
+  const magnitude = numerator < 0n ? -numerator : numerator;
+  const rounded = (magnitude + denominator / 2n) / denominator;
+  return numerator < 0n ? -rounded : rounded;
 }
 
 //Нийт PPM-г тооцоолох
@@ -276,12 +278,18 @@ export function runMonteCarlo({
     throw new Error("Simulation requires a valid box price.");
   if (!isInteger(openingCount) || openingCount <= 0)
     throw new Error("Opening count must be a positive integer.");
+  const validation = validateItems(items);
+  if (validation.errors.length || !validation.normalizedItems.length || calculateTotalPpm(items) !== PPM_TOTAL)
+    throw new Error("Simulation requires valid items totaling 1,000,000 PPM.");
   let totalPayoutMnt = 0n;
   let minimumProfitLossMnt = Infinity;
   let maximumProfitLossMnt = -Infinity;
   const profitLosses = [];
   for (let opening = 0; opening < openingCount; opening += 1) {
-    const payoutMnt = selectItemByPpm(items, random())?.valueMnt ?? 0;
+    const draw = random();
+    if (!Number.isFinite(draw) || draw < 0 || draw >= 1)
+      throw new Error("Random value must be in [0, 1).");
+    const payoutMnt = selectItemByPpm(items, draw).valueMnt;
     const profitLossMnt = resolvedPriceMnt - payoutMnt;
     totalPayoutMnt += BigInt(payoutMnt);
     minimumProfitLossMnt = Math.min(minimumProfitLossMnt, profitLossMnt);

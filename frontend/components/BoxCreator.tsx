@@ -71,7 +71,7 @@ export default function BoxCreator() {
           isValid={editor.isValid}
           simulation={editor.simulation}
           isSimulating={editor.isSimulating}
-          canSimulate={Boolean(editor.editingId)}
+          canSimulate={Number(editor.price) > 0 && editor.items.length > 0}
           onSimulate={editor.runSimulation}
         />
       </form>
@@ -79,6 +79,8 @@ export default function BoxCreator() {
         boxes={editor.savedBoxes}
         onSelect={selectSavedBox}
         onDelete={editor.deleteBox}
+        onSelectVersion={editor.selectVersion}
+        onShareVersion={editor.copyShareUrl}
         versions={editor.versions}
         versionsBoxId={editor.versionsBoxId}
         sectionRef={savedBoxesRef}

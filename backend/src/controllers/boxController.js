@@ -5,6 +5,7 @@ import {
   getBoxById,
   getVersions,
   simulateBox,
+  simulateBoxInput,
   updateBox,
   validateBoxInput,
 } from "../services/boxService.js";
@@ -34,7 +35,7 @@ export function validateBoxDraft(req, res) {
 }
 
 export async function getBox(req, res) {
-  const box = await getBoxById(req.params.id);
+  const box = await getBoxById(req.params.id, req.query.version);
   if (!box) throw notFoundError("box");
   res.json({ success: true, data: box });
 }
@@ -70,4 +71,8 @@ export async function simulateBoxOpenings(req, res) {
     success: true,
     data: await simulateBox(req.params.id),
   });
+}
+
+export function simulateDraft(req, res) {
+  res.json({ success: true, data: simulateBoxInput(req.body) });
 }

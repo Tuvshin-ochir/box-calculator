@@ -7,6 +7,7 @@ import {
   listBoxes,
   removeBox,
   simulateBoxOpenings,
+  simulateDraft,
   updateBoxDraft,
   validateBoxDraft,
 } from "../controllers/boxController.js";
@@ -17,6 +18,7 @@ const router = express.Router();
 router.get("/", asyncHandler(listBoxes));
 router.post("/", asyncHandler(createBoxDraft));
 router.post("/validate", asyncHandler(validateBoxDraft));
+router.post("/simulate", asyncHandler(simulateDraft));
 
 router
   .route("/:id")
