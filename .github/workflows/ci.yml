@@ -86,8 +86,6 @@ jobs:
         service: [backend, frontend]
     env:
       SERVICE: ${{ matrix.service }}
-      # Next.js embeds this public URL at build time. Set a repository variable
-      # to the browser-accessible backend URL before publishing for production.
       NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:4001' }}
     steps:
       - name: Checkout
